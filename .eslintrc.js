@@ -147,7 +147,7 @@ module.exports = {
 			'rules': {
 				// Warn only because it would make it difficult to convert JS classes to TypeScript, unless we
 				// make everything public which is not great. New code however should specify member accessibility.
-				'@typescript-eslint/explicit-member-accessibility': ['warn'],
+				'@typescript-eslint/explicit-member-accessibility': ['off'],
 				'@typescript-eslint/type-annotation-spacing': ['error', { 'before': false, 'after': true }],
 				'@typescript-eslint/comma-dangle': ['error', {
 					'arrays': 'always-multiline',

@@ -1,7 +1,9 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S node --title=joplin
 
 // Use njstrace to find out what Node.js might be spending time on
 // var njstrace = require('njstrace').inject();
+
+process.title = 'joplin';
 
 const compareVersion = require('compare-version');
 const nodeVersion = process && process.versions && process.versions.node ? process.versions.node : '0.0.0';

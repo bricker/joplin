@@ -232,25 +232,12 @@ class StateUtils {
 	}
 
 	public notesOrder(stateSettings: any) {
-		if (stateSettings['notes.sortOrder.field'] === 'order') {
-			return cacheEnabledOutput('notesOrder', [
-				{
-					by: 'order',
-					dir: 'DESC',
-				},
-				{
-					by: 'user_created_time',
-					dir: 'DESC',
-				},
-			]);
-		} else {
-			return cacheEnabledOutput('notesOrder', [
-				{
-					by: stateSettings['notes.sortOrder.field'],
-					dir: stateSettings['notes.sortOrder.reverse'] ? 'DESC' : 'ASC',
-				},
-			]);
-		}
+		return cacheEnabledOutput('notesOrder', [
+			{
+				by: stateSettings['notes.sortOrder.field'],
+				dir: stateSettings['notes.sortOrder.reverse'] ? 'DESC' : 'ASC',
+			},
+		]);
 	}
 
 	public foldersOrder(stateSettings: any) {
