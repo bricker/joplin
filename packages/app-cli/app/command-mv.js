@@ -7,25 +7,32 @@ const Note = require('@joplin/lib/models/Note').default;
 
 class Command extends BaseCommand {
 	usage() {
-		return 'mv <note> [notebook]';
+		return 'mv <item> [notebook]';
 	}
 
 	description() {
-		return _('Moves the notes matching <note> to [notebook].');
+		return _('Moves the items matching <item> to [notebook].');
 	}
 
 	async action(args) {
-		const pattern = args['note'];
+		const pattern = args['item'];
 		const destination = args['notebook'];
 
 		const folder = await Folder.loadByField('title', destination);
 		if (!folder) throw new Error(_('Cannot find "%s".', destination));
 
-		const notes = await app().loadItems(BaseModel.TYPE_NOTE, pattern);
-		if (!notes.length) throw new Error(_('Cannot find "%s".', pattern));
+		const items = await app().loadItems('folderOrNote', pattern);
+		if (!items.length) throw new Error(_('Cannot find "%s".', pattern));
 
-		for (let i = 0; i < notes.length; i++) {
-			await Note.moveToFolder(notes[i].id, folder.id);
+		for (let i = 0; i < items.length; i++) {
+			const item = items[i];
+			this.encryptionCheck(item);
+
+			if (item.type_ === BaseModel.TYPE_FOLDER) {
+				await Folder.moveToFolder(item.id, folder.id);
+			} else {
+				await Note.moveToFolder(item.id, folder.id);
+			}
 		}
 	}
 }

@@ -13,21 +13,10 @@ class Command extends BaseCommand {
 	}
 
 	async action(args) {
-		// let parentId;
-
-		// const parentNotebookIdentifier = args['parent-notebook'];
-		// if (parentNotebookIdentifier) {
-		// 	const parentFolder =
-		// 		(await Folder.loadByField('title', parentNotebookIdentifier)) ||
-		// 		(await Folder.loadByField('id', parentNotebookIdentifier));
-
-		// 	if (!parentFolder) {
-		// 		throw new Error(('Cannot find notebook "%s".', parentNotebookIdentifier));
-		// 	}
-		// 	parentId = parentFolder.id;
-		// }
-
-		const folder = await Folder.save({ title: args['new-notebook'] }, { userSideValidation: true });
+		const folder = await Folder.save({
+			title: args['new-notebook'],
+			parent_id: app().currentFolder().id,
+		}, { userSideValidation: true });
 		app().switchCurrentFolder(folder);
 	}
 }
