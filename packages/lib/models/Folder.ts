@@ -3,6 +3,7 @@ import BaseModel, { DeleteOptions } from '../BaseModel';
 import time from '../time';
 import { _ } from '../locale';
 import Note from './Note';
+import Setting from './Setting';
 import Database from '../database';
 import BaseItem from './BaseItem';
 import Resource from './Resource';
@@ -672,6 +673,22 @@ export default class Folder extends BaseItem {
 
 	static defaultFolder() {
 		return this.modelSelectOne('SELECT * FROM folders ORDER BY created_time DESC LIMIT 1');
+	}
+
+	static isHidden(folder: FolderEntity) {
+		if (Setting.value('showHidden')) return false;
+		if (/^\./.test(folder.title)) return true;
+
+		const archiveFolderName = Setting.value('archiveFolderName');
+		if (folder.title === archiveFolderName) return true;
+
+		// while (true) {
+		// 	if (folder.title === archiveFolderName) return true;
+		// 	if (!folder.parent_id) break;
+		// 	folder = await Folder.load(folder.parent_id);
+		// }
+
+		return false;
 	}
 
 	static async canNestUnder(folderId: string, targetFolderId: string) {

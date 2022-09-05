@@ -391,6 +391,20 @@ class Setting extends BaseModel {
 		};
 
 		this.metadata_ = {
+			'archiveFolderName': {
+				value: '.joplin-archive',
+				type: SettingItemType.String,
+				public: false,
+				appTypes: [AppType.Cli],
+				storage: SettingStorage.File,
+			},
+			'showHidden': {
+				value: false,
+				type: SettingItemType.Bool,
+				public: true,
+				appTypes: [AppType.Cli],
+				storage: SettingStorage.File,
+			},
 			'clientId': {
 				value: '',
 				type: SettingItemType.String,
