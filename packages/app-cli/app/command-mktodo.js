@@ -13,18 +13,18 @@ class Command extends BaseCommand {
 	}
 
 	async action(args) {
-		if (!app().currentFolder()) throw new Error(_('Notes can only be created within a notebook.'));
+		// if (!app().currentFolder()) throw new Error(_('Notes can only be created within a notebook.'));
 
 		let note = {
 			title: args['new-todo'],
-			parent_id: app().currentFolder().id,
+			parent_id: '437a2a5f3ff7410983adadf4d119eccb', // app().currentFolder().id,
 			is_todo: 1,
 		};
 
 		note = await Note.save(note);
 		Note.updateGeolocation(note.id);
 
-		app().switchCurrentFolder(app().currentFolder());
+		// app().switchCurrentFolder(app().currentFolder());
 	}
 }
 

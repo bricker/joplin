@@ -72,8 +72,9 @@ class Command extends BaseCommand {
 
 			this.logger().info('Disabling fullscreen...');
 
-			app().gui().showModalOverlay(_('Starting to edit note. Close the editor to get back to the prompt.'));
-			await app().gui().forceRender();
+			// app().gui().showModalOverlay(_('Starting to edit note. Close the editor to get back to the prompt.'));
+			// await app().gui().forceRender();
+			await app().gui().widget('noteText').show(false);
 			const termState = app().gui().termSaveState();
 
 			const spawnSync = require('child_process').spawnSync;
@@ -82,8 +83,9 @@ class Command extends BaseCommand {
 			if (result.error) this.stdout(_('Error opening note in editor: %s', result.error.message));
 
 			app().gui().termRestoreState(termState);
-			app().gui().hideModalOverlay();
-			app().gui().forceRender();
+			await app().gui().widget('noteText').show(true);
+			// app().gui().hideModalOverlay();
+			// app().gui().forceRender();
 
 			// -------------------------------------------------------------------------
 			// Save the note and clean up

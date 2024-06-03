@@ -19,12 +19,15 @@ class FolderListWidget extends ListWidget {
 		this.updateItems_ = false;
 		this.trimItemTitle = false;
 
-		this.itemRenderer = item => {
+		this.itemRenderer = (item) => {
 			const output = [];
 			if (item === '-') {
 				output.push('-'.repeat(this.innerWidth));
 			} else if (item.type_ === Folder.modelType()) {
-				output.push(' '.repeat(this.folderDepth(this.folders, item.id)) + Folder.displayTitle(item));
+				const isHidden = Folder.isHidden(item);
+				if (isHidden) return '';
+				const title = Folder.displayTitle(item);
+				output.push(' '.repeat(this.folderDepth(this.folders, item.id)) + title);
 			} else if (item.type_ === Tag.modelType()) {
 				output.push(`[${Folder.displayTitle(item)}]`);
 			} else if (item.type_ === BaseModel.TYPE_SEARCH) {
@@ -113,7 +116,7 @@ class FolderListWidget extends ListWidget {
 	}
 
 	set folders(v) {
-		this.folders_ = v;
+		this.folders_ = v.filter(f => !Folder.isHidden(f));
 		this.updateItems_ = true;
 		this.updateIndexFromSelectedItemId();
 		this.invalidate();

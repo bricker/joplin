@@ -825,6 +825,21 @@ export default class Note extends BaseItem {
 		}), { autoTimestamp: false, dispatchUpdateAction: false });
 	}
 
+	public static async updatePosition(note: NoteEntity, relativePosition: number) {
+		const noteSql = `
+			SELECT id
+			FROM notes
+			WHERE is_conflict = 0
+				AND parent_id = ?
+				AND todo_completed = 0
+			ORDER BY \`order\` ASC`;
+
+		const notes = await this.modelSelectAll(noteSql, [note.parent_id]);
+		let currentIndex = notes.findIndex(n => n.id === note.id);
+		if (currentIndex < 0) currentIndex = notes.length - 1;
+		return this.insertNotesAt(note.parent_id, [note.id], currentIndex + relativePosition);
+	}
+
 	// This method will disable the NOTE_UPDATE_ONE action to prevent a lot
 	// of unecessary updates, so it's the caller's responsability to update
 	// the UI once the call is finished. This is done by listening to the
@@ -846,92 +861,35 @@ export default class Note extends BaseItem {
 
 		try {
 			const noteSql = `
-				SELECT id, \`order\`, user_created_time, user_updated_time
+				SELECT id, title, \`order\`, user_updated_time
 				FROM notes
-				WHERE is_conflict = 0 AND parent_id = ?
-			${this.customOrderByColumns('string')}`;
+				WHERE is_conflict = 0
+					AND parent_id = ?
+					AND id NOT IN (?)
+					AND todo_completed = 0
+				ORDER BY \`order\` ASC`;
 
-			let notes = await this.modelSelectAll(noteSql, [folderId]);
+			const notes = await this.modelSelectAll(noteSql, [folderId, noteIds.join(',')]);
 
-			// If the target index is the same as the source note index, exit now
-			for (let i = 0; i < notes.length; i++) {
-				const note = notes[i];
-				if (note.id === noteIds[0] && index === i) return defer();
-			}
-
-			// If some of the target notes have order = 0, set the order field to user_created_time
-			// (historically, all notes had the order field set to 0)
-			let hasSetOrder = false;
-			for (let i = 0; i < notes.length; i++) {
-				const note = notes[i];
-				if (!note.order) {
-					const updatedNote = await this.updateNoteOrder_(note, note.user_created_time);
-					notes[i] = updatedNote;
-					hasSetOrder = true;
-				}
-			}
-
-			if (hasSetOrder) notes = await this.modelSelectAll(noteSql, [folderId]);
-
-			// Find the order value for the first note to be inserted,
-			// and the increment between the order values of each inserted notes.
-			let newOrder = 0;
-			let intervalBetweenNotes = 0;
-			const defaultIntevalBetweeNotes = 60 * 60 * 1000;
-
-			if (!notes.length) { // If there's no notes in the target notebook
-				newOrder = Date.now();
-				intervalBetweenNotes = defaultIntevalBetweeNotes;
-			} else if (index >= notes.length) { // Insert at the end
-				intervalBetweenNotes = notes[notes.length - 1].order / (noteIds.length + 1);
-				newOrder = notes[notes.length - 1].order - intervalBetweenNotes;
-			} else if (index === 0) { // Insert at the beginning
-				const firstNoteOrder = notes[0].order;
-				if (firstNoteOrder >= Date.now()) {
-					intervalBetweenNotes = defaultIntevalBetweeNotes;
-					newOrder = firstNoteOrder + defaultIntevalBetweeNotes;
-				} else {
-					intervalBetweenNotes = (Date.now() - firstNoteOrder) / (noteIds.length + 1);
-					newOrder = firstNoteOrder + intervalBetweenNotes * noteIds.length;
-				}
-			} else { // Normal insert
-				let noteBefore = notes[index - 1];
-				let noteAfter = notes[index];
-
-				if (noteBefore.order === noteAfter.order) {
-					let previousOrder = noteBefore.order;
-					for (let i = index; i >= 0; i--) {
-						const n = notes[i];
-						if (n.order <= previousOrder) {
-							const o = previousOrder + defaultIntevalBetweeNotes;
-							const updatedNote = await this.updateNoteOrder_(n, o);
-							notes[i] = Object.assign({}, n, updatedNote);
-							previousOrder = o;
-						} else {
-							previousOrder = n.order;
-						}
-					}
-
-					noteBefore = notes[index - 1];
-					noteAfter = notes[index];
-				}
-
-				intervalBetweenNotes = (noteBefore.order - noteAfter.order) / (noteIds.length + 1);
-				newOrder = noteAfter.order + intervalBetweenNotes * noteIds.length;
-			}
-
-			// Set the order value for all the notes to be inserted
-			for (const noteId of noteIds) {
+			const notesToInsert = await Promise.all(noteIds.map(async (noteId) => {
 				const note = await Note.load(noteId);
-				if (!note) throw new Error(`No such note: ${noteId}`);
+				if (!note) return Promise.reject(`No such note: ${noteId}`);
+				return note;
+			}));
 
+			const normalizedIndex = Math.max(0, Math.min(index, notes.length));
+			const orderedNotes = notes
+				.splice(0, normalizedIndex) // Remove and return the first [index] elements from [notes]
+				.concat(notesToInsert)			// Append (insert) the new notes
+				.concat(notes);							// Append the remaining elements in [notes]
+
+			for (let i = 0; i < orderedNotes.length; i++) {
+				const note = orderedNotes[i];
 				await this.updateNoteOrder_({
-					id: noteId,
+					id: note.id, 
 					parent_id: folderId,
 					user_updated_time: note.user_updated_time,
-				}, newOrder);
-
-				newOrder -= intervalBetweenNotes;
+				}, i);
 			}
 		} finally {
 			defer();

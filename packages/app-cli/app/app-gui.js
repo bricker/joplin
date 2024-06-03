@@ -525,7 +525,7 @@ class AppGui {
 					args[i] = note ? note.id : '';
 				} else if (args[i] == '$b') {
 					args[i] = folder ? folder.id : '';
-				} else if (args[i] == '$c') {
+				} else if (args[i] == '$c' || args[i] == '.') {
 					const item = this.activeListItem();
 					args[i] = item ? item.id : '';
 				}

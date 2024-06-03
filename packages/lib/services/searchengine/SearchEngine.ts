@@ -529,6 +529,11 @@ export default class SearchEngine {
 			if (key === 'body') searchOptions.bodyPattern = `*${term}*`;
 		}
 
+		if (!Setting.value('showHidden')) {
+			searchOptions.conditions = ['(title NOT LIKE ?)'];
+			searchOptions.conditionsParams = ['.%'];
+		}
+
 		return Note.previews(null, searchOptions);
 	}
 
